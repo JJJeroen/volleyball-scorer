@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#0d0d1a"/>
+  <!-- Volleyball circle -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#fff" stroke-width="18"/>
+  <!-- Panel lines -->
+  <path d="M 256 96 Q 330 180 310 256 Q 290 330 256 416" fill="none" stroke="#fff" stroke-width="12"/>
+  <path d="M 256 96 Q 180 180 200 256 Q 220 330 256 416" fill="none" stroke="#fff" stroke-width="12"/>
+  <path d="M 96 256 Q 180 190 256 200 Q 330 210 416 256" fill="none" stroke="#fff" stroke-width="12"/>
+  <!-- Subtle team color accents -->
+  <circle cx="170" cy="180" r="30" fill="#e74c3c" opacity="0.6"/>
+  <circle cx="342" cy="180" r="30" fill="#3498db" opacity="0.6"/>
+</svg>

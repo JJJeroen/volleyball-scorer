@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Volleybal Scheidsrechter</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0d0d1a" />
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-inset" />
+  <meta name="apple-mobile-web-app-title" content="Volleybal" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d0d1a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* ── Setup screen ── */
+    #setup {
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+
+    #setup h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    #setup p {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 36px;
+    }
+
+    .team-inputs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .team-inputs input {
+      flex: 1;
+      background: #1a1a2e;
+      border: 2px solid #333;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 16px 10px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #input-a:focus { border-color: #e74c3c; }
+    #input-a { border-color: #e74c3c55; }
+    #input-b:focus { border-color: #3498db; }
+    #input-b { border-color: #3498db55; }
+
+    .btn-start {
+      width: 100%;
+      background: #5c4fff;
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 18px;
+      cursor: pointer;
+      transition: background 0.15s;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-start:active { background: #4a3fd4; }
+
+    /* ── Game screen ── */
+    #game {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 380px;
+      gap: 14px;
+    }
+
+    /* Scoreboard */
+    .scoreboard {
+      display: flex;
+      width: 100%;
+      gap: 12px;
+    }
+
+    .team-card {
+      flex: 1;
+      background: #1a1a2e;
+      border-radius: 20px;
+      padding: 24px 12px 20px;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.3s;
+      position: relative;
+    }
+
+    .team-card.flash {
+      transform: scale(1.06);
+    }
+
+    #card-a { border-color: #e74c3c44; }
+    #card-b { border-color: #3498db44; }
+
+    .team-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      opacity: 0.75;
+    }
+
+    #card-a .team-label { color: #e74c3c; }
+    #card-b .team-label { color: #3498db; }
+
+    .score-num {
+      font-size: 5.5rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #fff;
+    }
+
+    /* Status bar */
+    .status-bar {
+      width: 100%;
+      background: #1a1a2e;
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: #333;
+      transition: background 0.3s;
+    }
+
+    .status-bar.listening .dot {
+      background: #2ecc71;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    .status-bar.heard .dot { background: #f39c12; }
+    .status-bar.error .dot { background: #e74c3c; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .status-text {
+      font-size: 0.85rem;
+      color: #888;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Last action */
+    .last-action {
+      font-size: 0.8rem;
+      color: #555;
+      min-height: 18px;
+      text-align: center;
+    }
+
+    /* Commands cheat sheet */
+    .commands {
+      width: 100%;
+      background: #1a1a2e;
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+
+    .commands h3 {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #444;
+      margin-bottom: 10px;
+    }
+
+    .cmd-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+    }
+
+    .cmd-phrase {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #7c6fff;
+    }
+
+    .cmd-desc {
+      font-size: 0.78rem;
+      color: #555;
+    }
+
+    /* Win overlay */
+    #win-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0d0d1aee;
+      backdrop-filter: blur(4px);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+      z-index: 100;
+    }
+
+    #win-overlay h2 {
+      font-size: 1.3rem;
+      font-weight: 500;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    #win-name {
+      font-size: 3.5rem;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    #win-score-text {
+      font-size: 1.4rem;
+      color: #666;
+      margin-bottom: 48px;
+    }
+
+    .btn-restart {
+      background: #5c4fff;
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 16px 40px;
+      cursor: pointer;
+    }
+
+    .btn-restart:active { background: #4a3fd4; }
+
+    /* Protocol warning */
+    #protocol-warning {
+      display: none;
+      width: 100%;
+      max-width: 380px;
+      background: #2a1a0e;
+      border: 2px solid #e67e22;
+      border-radius: 16px;
+      padding: 24px 20px;
+      text-align: center;
+      color: #e67e22;
+    }
+
+    #protocol-warning h2 { font-size: 1.1rem; margin-bottom: 12px; }
+    #protocol-warning p { font-size: 0.85rem; color: #aaa; line-height: 1.6; }
+    #protocol-warning code {
+      background: #1a1a2e;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #7c6fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Protocol warning -->
+  <div id="protocol-warning">
+    <h2>Microfoon niet beschikbaar</h2>
+    <p>Chrome staat geen microfoon toe op <code>file://</code>.<br/><br/>
+    Open een terminal en start een lokale server:<br/><br/>
+    <code>python3 -m http.server 8080</code><br/><br/>
+    Open dan in Chrome:<br/>
+    <code>http://localhost:8080</code></p>
+  </div>
+
+  <!-- Setup -->
+  <div id="setup">
+    <h1>Volleybal</h1>
+    <p>Geef de teams een naam of gebruik rood en blauw</p>
+    <div class="team-inputs">
+      <input id="input-a" type="text" placeholder="Rood" maxlength="10" autocomplete="off" />
+      <input id="input-b" type="text" placeholder="Blauw" maxlength="10" autocomplete="off" />
+    </div>
+    <button class="btn-start" onclick="startGame()">Start wedstrijd</button>
+  </div>
+
+  <!-- Game -->
+  <div id="game">
+    <div class="scoreboard">
+      <div class="team-card" id="card-a">
+        <div class="team-label" id="label-a">Rood</div>
+        <div class="score-num" id="score-a">0</div>
+      </div>
+      <div class="team-card" id="card-b">
+        <div class="team-label" id="label-b">Blauw</div>
+        <div class="score-num" id="score-b">0</div>
+      </div>
+    </div>
+
+    <div class="status-bar listening" id="status-bar">
+      <div class="dot"></div>
+      <span class="status-text" id="status-text">Luistert... zeg "scheids"</span>
+    </div>
+
+    <div class="last-action" id="last-action"></div>
+
+    <div class="commands">
+      <h3>Commando's</h3>
+      <div class="cmd-row">
+        <span class="cmd-phrase" id="cmd-a">scheids punt rood</span>
+        <span class="cmd-desc">punt team A</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-phrase" id="cmd-b">scheids punt blauw</span>
+        <span class="cmd-desc">punt team B</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-phrase">scheids stand</span>
+        <span class="cmd-desc">lees de stand voor</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-phrase">scheids terug</span>
+        <span class="cmd-desc">laatste punt ongedaan</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Win overlay -->
+  <div id="win-overlay">
+    <h2>Gewonnen!</h2>
+    <div id="win-name"></div>
+    <div id="win-score-text"></div>
+    <button class="btn-restart" onclick="restartGame()">Nieuw spel</button>
+  </div>
+
+  <script>
+    // ── Service Worker ───────────────────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    // ── Protocol check ───────────────────────────────────────────────────────
+    if (location.protocol === 'file:') {
+      document.getElementById('protocol-warning').style.display = 'block';
+      document.getElementById('setup').style.display = 'none';
+    }
+
+    // ── State ────────────────────────────────────────────────────────────────
+    const state = {
+      nameA: 'Rood',
+      nameB: 'Blauw',
+      scoreA: 0,
+      scoreB: 0,
+      history: [],
+      gameOver: false
+    };
+
+    // ── Setup ────────────────────────────────────────────────────────────────
+    function startGame() {
+      state.nameA = document.getElementById('input-a').value.trim() || 'Rood';
+      state.nameB = document.getElementById('input-b').value.trim() || 'Blauw';
+
+      document.getElementById('label-a').textContent = state.nameA;
+      document.getElementById('label-b').textContent = state.nameB;
+      document.getElementById('cmd-a').textContent = `scheids punt ${state.nameA.toLowerCase()}`;
+      document.getElementById('cmd-b').textContent = `scheids punt ${state.nameB.toLowerCase()}`;
+
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('game').style.display = 'flex';
+
+      requestWakeLock();
+      initRecognition();
+      speak(`Wedstrijd begonnen. ${state.nameA} tegen ${state.nameB}. Succes!`);
+    }
+
+    // ── Scoring ──────────────────────────────────────────────────────────────
+    function addPoint(team) {
+      if (state.gameOver) return;
+      state.history.push({ a: state.scoreA, b: state.scoreB });
+      if (team === 'a') state.scoreA++;
+      else state.scoreB++;
+      updateScoreDisplay();
+      flashCard(team);
+      if (!checkWin()) readScore();
+    }
+
+    function undoPoint() {
+      if (state.history.length === 0) {
+        speak('Niets om ongedaan te maken.');
+        return;
+      }
+      const prev = state.history.pop();
+      state.scoreA = prev.a;
+      state.scoreB = prev.b;
+      updateScoreDisplay();
+      setLastAction('Punt ongedaan gemaakt');
+      readScore();
+    }
+
+    function checkWin() {
+      const a = state.scoreA, b = state.scoreB;
+      if ((a >= 25 || b >= 25) && Math.abs(a - b) >= 2) {
+        const winnerName = a > b ? state.nameA : state.nameB;
+        state.gameOver = true;
+        showWin(winnerName, a, b);
+        return true;
+      }
+      return false;
+    }
+
+    function readScore() {
+      speak(`${state.nameA} ${state.scoreA}, ${state.nameB} ${state.scoreB}`);
+    }
+
+    // ── Display ──────────────────────────────────────────────────────────────
+    function updateScoreDisplay() {
+      document.getElementById('score-a').textContent = state.scoreA;
+      document.getElementById('score-b').textContent = state.scoreB;
+    }
+
+    function flashCard(team) {
+      const card = document.getElementById(`card-${team}`);
+      card.classList.add('flash');
+      setTimeout(() => card.classList.remove('flash'), 250);
+    }
+
+    function setLastAction(text) {
+      document.getElementById('last-action').textContent = text;
+    }
+
+    function setStatus(type, text) {
+      const bar = document.getElementById('status-bar');
+      bar.className = `status-bar ${type}`;
+      document.getElementById('status-text').textContent = text;
+    }
+
+    function showWin(name, a, b) {
+      document.getElementById('win-name').textContent = name;
+      document.getElementById('win-score-text').textContent = `${a} – ${b}`;
+      document.getElementById('win-overlay').style.display = 'flex';
+      speak(`${name} wint! Eindstand: ${a} tegen ${b}. Goed gespeeld!`);
+    }
+
+    function restartGame() {
+      state.scoreA = 0;
+      state.scoreB = 0;
+      state.history = [];
+      state.gameOver = false;
+      updateScoreDisplay();
+      document.getElementById('win-overlay').style.display = 'none';
+      setLastAction('');
+      speak('Nieuw spel gestart. Succes!');
+    }
+
+    // ── Speech Recognition ───────────────────────────────────────────────────
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let restartHandle = null;
+    let isSpeaking = false;
+
+    function initRecognition() {
+      if (!SR) {
+        setStatus('error', 'Spraakherkenning niet ondersteund — gebruik Chrome');
+        return;
+      }
+
+      recognition = new SR();
+      recognition.lang = 'nl-NL';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 5;
+
+      recognition.onstart = () => {
+        if (!isSpeaking) setStatus('listening', 'Luistert... zeg "scheids"');
+      };
+
+      recognition.onresult = (event) => {
+        if (isSpeaking) return;
+
+        const result = event.results[event.results.length - 1];
+        const alternatives = Array.from({ length: result.length }, (_, i) =>
+          result[i].transcript.toLowerCase().trim()
+        );
+
+        console.log('[spraak]', alternatives);
+
+        // Only act if wake word present in any alternative
+        const match = alternatives.find(t => t.includes('scheids'));
+        if (!match) return;
+
+        setStatus('heard', `"${match}"`);
+        processCommand(match);
+        setTimeout(() => {
+          if (!isSpeaking) setStatus('listening', 'Luistert... zeg "scheids"');
+        }, 2500);
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error === 'no-speech' || e.error === 'aborted') return;
+        if (e.error === 'not-allowed') {
+          setStatus('error', 'Microfoon geweigerd — open via http://localhost:8080');
+          return;
+        }
+        if (e.error === 'network') {
+          setStatus('error', 'Netwerkfout — internetverbinding nodig voor spraakherkenning');
+          return;
+        }
+        setStatus('error', `Fout: ${e.error}`);
+      };
+
+      recognition.onend = () => {
+        if (!state.gameOver && !isSpeaking) {
+          clearTimeout(restartHandle);
+          restartHandle = setTimeout(() => safeStart(), 400);
+        }
+      };
+
+      safeStart();
+    }
+
+    function safeStart() {
+      try { recognition.start(); } catch (_) {}
+    }
+
+    function safeStop() {
+      try { recognition.stop(); } catch (_) {}
+    }
+
+    function processCommand(text) {
+      const a = state.nameA.toLowerCase();
+      const b = state.nameB.toLowerCase();
+
+      if (text.includes('terug')) {
+        undoPoint();
+        setLastAction('Punt ongedaan gemaakt');
+        return;
+      }
+
+      if (text.includes('stand')) {
+        setLastAction('Stand voorgelezen');
+        readScore();
+        return;
+      }
+
+      if (text.includes('punt')) {
+        if (text.includes(a)) {
+          setLastAction(`Punt voor ${state.nameA}`);
+          addPoint('a');
+          return;
+        }
+        if (text.includes(b)) {
+          setLastAction(`Punt voor ${state.nameB}`);
+          addPoint('b');
+          return;
+        }
+        // Heard "punt" but team name unclear
+        speak('Welk team?');
+        setLastAction('Team niet herkend');
+        return;
+      }
+    }
+
+    // ── Text-to-Speech ───────────────────────────────────────────────────────
+    function speak(text) {
+      isSpeaking = true;
+      safeStop();
+
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = 'nl-NL';
+      utt.rate = 1.1;
+      utt.pitch = 1.0;
+
+      utt.onend = () => {
+        isSpeaking = false;
+        setStatus('listening', 'Luistert... zeg "scheids"');
+        clearTimeout(restartHandle);
+        restartHandle = setTimeout(() => safeStart(), 350);
+      };
+
+      utt.onerror = () => {
+        isSpeaking = false;
+        clearTimeout(restartHandle);
+        restartHandle = setTimeout(() => safeStart(), 350);
+      };
+
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utt);
+    }
+
+    // ── Screen Wake Lock ─────────────────────────────────────────────────────
+    async function requestWakeLock() {
+      try {
+        await navigator.wakeLock.request('screen');
+      } catch (_) {
+        // Not supported or denied — not critical
+      }
+    }
+  </script>
+</body>
+</html>
