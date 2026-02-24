@@ -333,7 +333,7 @@
 
     <div class="status-bar listening" id="status-bar">
       <div class="dot"></div>
-      <span class="status-text" id="status-text">Luistert... zeg "scheids"</span>
+      <span class="status-text" id="status-text">Luistert...</span>
     </div>
 
     <div class="last-action" id="last-action"></div>
@@ -341,19 +341,19 @@
     <div class="commands">
       <h3>Commando's</h3>
       <div class="cmd-row">
-        <span class="cmd-phrase" id="cmd-a">scheids rood</span>
+        <span class="cmd-phrase" id="cmd-a">rood</span>
         <span class="cmd-desc">punt voor rood</span>
       </div>
       <div class="cmd-row">
-        <span class="cmd-phrase" id="cmd-b">scheids blauw</span>
+        <span class="cmd-phrase" id="cmd-b">blauw</span>
         <span class="cmd-desc">punt voor blauw</span>
       </div>
       <div class="cmd-row">
-        <span class="cmd-phrase">scheids stand</span>
+        <span class="cmd-phrase">stand</span>
         <span class="cmd-desc">lees de stand voor</span>
       </div>
       <div class="cmd-row">
-        <span class="cmd-phrase">scheids terug</span>
+        <span class="cmd-phrase">terug</span>
         <span class="cmd-desc">laatste punt ongedaan</span>
       </div>
     </div>
@@ -396,8 +396,8 @@
 
       document.getElementById('label-a').textContent = state.nameA;
       document.getElementById('label-b').textContent = state.nameB;
-      document.getElementById('cmd-a').textContent = `scheids ${state.nameA.toLowerCase()}`;
-      document.getElementById('cmd-b').textContent = `scheids ${state.nameB.toLowerCase()}`;
+      document.getElementById('cmd-a').textContent = state.nameA.toLowerCase();
+      document.getElementById('cmd-b').textContent = state.nameB.toLowerCase();
 
       document.getElementById('setup').style.display = 'none';
       document.getElementById('game').style.display = 'flex';
@@ -504,8 +504,19 @@
       recognition.interimResults = false;
       recognition.maxAlternatives = 5;
 
+      // Constrain vocabulary to known commands for better accuracy
+      const SGL = window.SpeechGrammarList || window.webkitSpeechGrammarList;
+      if (SGL) {
+        const a = state.nameA.toLowerCase();
+        const b = state.nameB.toLowerCase();
+        const grammar = `#JSGF V1.0; grammar commands; public <command> = ${a} | ${b} | stand | terug ;`;
+        const list = new SGL();
+        list.addFromString(grammar, 1);
+        recognition.grammars = list;
+      }
+
       recognition.onstart = () => {
-        if (!isSpeaking) setStatus('listening', 'Luistert... zeg "scheids"');
+        if (!isSpeaking) setStatus('listening', 'Luistert...');
       };
 
       recognition.onresult = (event) => {
@@ -518,14 +529,11 @@
 
         console.log('[spraak]', alternatives);
 
-        // Only act if wake word present in any alternative
-        const match = alternatives.find(t => t.includes('scheids'));
-        if (!match) return;
-
+        const match = alternatives[0];
         setStatus('heard', `"${match}"`);
         processCommand(match);
         setTimeout(() => {
-          if (!isSpeaking) setStatus('listening', 'Luistert... zeg "scheids"');
+          if (!isSpeaking) setStatus('listening', 'Luistert...');
         }, 2500);
       };
 
@@ -600,7 +608,7 @@
 
       utt.onend = () => {
         isSpeaking = false;
-        setStatus('listening', 'Luistert... zeg "scheids"');
+        setStatus('listening', 'Luistert...');
         clearTimeout(restartHandle);
         restartHandle = setTimeout(() => safeStart(), 350);
       };

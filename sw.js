@@ -1,4 +1,4 @@
-const CACHE = 'volleybal-v2';
+const CACHE = 'volleybal-v3';
 const ASSETS = ['./', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
