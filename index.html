@@ -341,11 +341,11 @@
     <div class="commands">
       <h3>Commando's</h3>
       <div class="cmd-row">
-        <span class="cmd-phrase" id="cmd-a">scheids punt rood</span>
+        <span class="cmd-phrase" id="cmd-a">scheids rood</span>
         <span class="cmd-desc">punt team A</span>
       </div>
       <div class="cmd-row">
-        <span class="cmd-phrase" id="cmd-b">scheids punt blauw</span>
+        <span class="cmd-phrase" id="cmd-b">scheids blauw</span>
         <span class="cmd-desc">punt team B</span>
       </div>
       <div class="cmd-row">
@@ -396,8 +396,8 @@
 
       document.getElementById('label-a').textContent = state.nameA;
       document.getElementById('label-b').textContent = state.nameB;
-      document.getElementById('cmd-a').textContent = `scheids punt ${state.nameA.toLowerCase()}`;
-      document.getElementById('cmd-b').textContent = `scheids punt ${state.nameB.toLowerCase()}`;
+      document.getElementById('cmd-a').textContent = `scheids ${state.nameA.toLowerCase()}`;
+      document.getElementById('cmd-b').textContent = `scheids ${state.nameB.toLowerCase()}`;
 
       document.getElementById('setup').style.display = 'none';
       document.getElementById('game').style.display = 'flex';
@@ -576,20 +576,14 @@
         return;
       }
 
-      if (text.includes('punt')) {
-        if (text.includes(a)) {
-          setLastAction(`Punt voor ${state.nameA}`);
-          addPoint('a');
-          return;
-        }
-        if (text.includes(b)) {
-          setLastAction(`Punt voor ${state.nameB}`);
-          addPoint('b');
-          return;
-        }
-        // Heard "punt" but team name unclear
-        speak('Welk team?');
-        setLastAction('Team niet herkend');
+      if (text.includes(a)) {
+        setLastAction(`Punt voor ${state.nameA}`);
+        addPoint('a');
+        return;
+      }
+      if (text.includes(b)) {
+        setLastAction(`Punt voor ${state.nameB}`);
+        addPoint('b');
         return;
       }
     }
