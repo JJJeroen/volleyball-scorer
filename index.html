@@ -70,6 +70,71 @@
     #input-b:focus { border-color: #3498db; }
     #input-b { border-color: #3498db55; }
 
+    /* ── Clicker setup ── */
+    .clicker-section {
+      width: 100%;
+      background: #1a1a2e;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .clicker-section h3 {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #444;
+      margin-bottom: 12px;
+    }
+
+    .clicker-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .clicker-row:last-child { margin-bottom: 0; }
+
+    .btn-assign {
+      flex: 1;
+      background: #252540;
+      border: 2px solid #333;
+      border-radius: 10px;
+      color: #aaa;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 10px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-assign.waiting {
+      border-color: #5c4fff;
+      color: #7c6fff;
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    .btn-assign.assigned {
+      border-color: #2ecc7144;
+      color: #ccc;
+    }
+
+    .key-badge {
+      min-width: 36px;
+      text-align: center;
+      background: #111;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      color: #555;
+    }
+
+    .key-badge.set { color: #2ecc71; }
+
     .btn-start {
       width: 100%;
       background: #5c4fff;
@@ -107,19 +172,40 @@
       flex: 1;
       background: #1a1a2e;
       border-radius: 20px;
-      padding: 24px 12px 20px;
+      padding: 24px 12px 16px;
       text-align: center;
       border: 2px solid transparent;
       transition: transform 0.15s, border-color 0.3s;
       position: relative;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .team-card.flash {
-      transform: scale(1.06);
-    }
+    .team-card:active { transform: scale(0.95); }
+    .team-card.flash  { transform: scale(1.06); }
 
     #card-a { border-color: #e74c3c44; }
     #card-b { border-color: #3498db44; }
+
+    /* Hold-to-undo progress bar */
+    .team-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 4px;
+      width: 0;
+      border-radius: 0 0 20px 20px;
+      transition: none;
+    }
+    .team-card.holding::after {
+      width: 100%;
+      transition: width var(--hold-duration, 0.5s) linear;
+    }
+    #card-a.holding { border-color: #e74c3c; }
+    #card-a::after  { background: #e74c3c; }
+    #card-b.holding { border-color: #3498db; }
+    #card-b::after  { background: #3498db; }
 
     .team-label {
       font-size: 0.8rem;
@@ -138,6 +224,15 @@
       font-weight: 900;
       line-height: 1;
       color: #fff;
+    }
+
+    .tap-hint {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 10px;
+      opacity: 0.2;
     }
 
     /* Status bar */
@@ -165,12 +260,12 @@
       animation: blink 1.5s ease-in-out infinite;
     }
 
-    .status-bar.heard .dot { background: #f39c12; }
-    .status-bar.error .dot { background: #e74c3c; }
+    .status-bar.heard .dot  { background: #f39c12; }
+    .status-bar.error .dot  { background: #e74c3c; }
 
     @keyframes blink {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.2; }
+      50%       { opacity: 0.2; }
     }
 
     .status-text {
@@ -284,7 +379,7 @@
     }
 
     #protocol-warning h2 { font-size: 1.1rem; margin-bottom: 12px; }
-    #protocol-warning p { font-size: 0.85rem; color: #aaa; line-height: 1.6; }
+    #protocol-warning p  { font-size: 0.85rem; color: #aaa; line-height: 1.6; }
     #protocol-warning code {
       background: #1a1a2e;
       border-radius: 6px;
@@ -315,19 +410,44 @@
       <input id="input-a" type="text" placeholder="Rood" maxlength="10" autocomplete="off" />
       <input id="input-b" type="text" placeholder="Blauw" maxlength="10" autocomplete="off" />
     </div>
+    <div class="clicker-section">
+      <h3>Bluetooth klicker (optioneel)</h3>
+      <div class="clicker-row">
+        <button class="btn-assign" id="assign-a" onclick="startAssign('a')">Punt <span class="slot-team-a">Rood</span></button>
+        <span class="key-badge" id="key-a">–</span>
+      </div>
+      <div class="clicker-row">
+        <button class="btn-assign" id="assign-b" onclick="startAssign('b')">Punt <span class="slot-team-b">Blauw</span></button>
+        <span class="key-badge" id="key-b">–</span>
+      </div>
+      <div class="clicker-row">
+        <button class="btn-assign" id="assign-undo" onclick="startAssign('undo')">Ongedaan maken</button>
+        <span class="key-badge" id="key-undo">–</span>
+      </div>
+      <div class="clicker-row">
+        <button class="btn-assign" id="assign-score" onclick="startAssign('score')">Stand voorlezen</button>
+        <span class="key-badge" id="key-score">–</span>
+      </div>
+      <p style="font-size:0.72rem; color:#444; margin-top:10px; line-height:1.5;" id="clicker-hint">
+        Druk op een knop om te koppelen &nbsp;·&nbsp; Zonder ongedaan-knop: lang vasthouden = ongedaan
+      </p>
+    </div>
+
     <button class="btn-start" onclick="startGame()">Start wedstrijd</button>
   </div>
 
   <!-- Game -->
   <div id="game">
     <div class="scoreboard">
-      <div class="team-card" id="card-a">
+      <div class="team-card" id="card-a" onclick="addPoint('a')">
         <div class="team-label" id="label-a">Rood</div>
-        <div class="score-num" id="score-a">0</div>
+        <div class="score-num"  id="score-a">0</div>
+        <div class="tap-hint">tik</div>
       </div>
-      <div class="team-card" id="card-b">
+      <div class="team-card" id="card-b" onclick="addPoint('b')">
         <div class="team-label" id="label-b">Blauw</div>
-        <div class="score-num" id="score-b">0</div>
+        <div class="score-num"  id="score-b">0</div>
+        <div class="tap-hint">tik</div>
       </div>
     </div>
 
@@ -341,11 +461,11 @@
     <div class="commands">
       <h3>Commando's</h3>
       <div class="cmd-row">
-        <span class="cmd-phrase" id="cmd-a">rood</span>
+        <span class="cmd-phrase" id="cmd-a">punt rood</span>
         <span class="cmd-desc">punt voor rood</span>
       </div>
       <div class="cmd-row">
-        <span class="cmd-phrase" id="cmd-b">blauw</span>
+        <span class="cmd-phrase" id="cmd-b">punt blauw</span>
         <span class="cmd-desc">punt voor blauw</span>
       </div>
       <div class="cmd-row">
@@ -379,7 +499,119 @@
       document.getElementById('setup').style.display = 'none';
     }
 
+    // ── Clicker config ───────────────────────────────────────────────────────
+    const HOLD_MS = 500;
+    const clickerKeys  = { a: null, b: null, undo: null, score: null };
+    const keyHoldStart = {};
+    let assigningFor   = null;
+
+    const SLOT_LABEL = {
+      a:     () => `Punt ${document.querySelector('.slot-team-a')?.textContent || 'Rood'}`,
+      b:     () => `Punt ${document.querySelector('.slot-team-b')?.textContent || 'Blauw'}`,
+      undo:  () => 'Ongedaan maken',
+      score: () => 'Stand voorlezen',
+    };
+
+    function startAssign(slot) {
+      if (assigningFor && assigningFor !== slot) {
+        const prev = document.getElementById(`assign-${assigningFor}`);
+        prev.textContent = SLOT_LABEL[assigningFor]();
+        prev.classList.remove('waiting');
+      }
+      assigningFor = slot;
+      const btn = document.getElementById(`assign-${slot}`);
+      btn.textContent = 'Druk op klicker...';
+      btn.classList.add('waiting');
+      btn.classList.remove('assigned');
+    }
+
+    function teamForKey(code) {
+      if (clickerKeys.a && code === clickerKeys.a) return 'a';
+      if (clickerKeys.b && code === clickerKeys.b) return 'b';
+      return null;
+    }
+
+    function keyLabel(code) {
+      return code
+        .replace('AudioVolume', 'Vol')
+        .replace('Arrow', '')
+        .replace('Key', '')
+        .replace('Digit', '')
+        .replace('Enter', '↵')
+        .replace('Space', '⎵')
+        .replace('Escape', 'Esc');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      // ── Assignment mode ──
+      if (assigningFor) {
+        const slot = assigningFor;
+        assigningFor = null;
+        // Reject duplicate
+        const duplicate = Object.entries(clickerKeys).find(([k, v]) => k !== slot && v === e.code);
+        const btn = document.getElementById(`assign-${slot}`);
+        if (duplicate) {
+          btn.textContent = 'Al in gebruik! Probeer andere knop';
+          btn.classList.remove('waiting');
+          setTimeout(() => { btn.textContent = SLOT_LABEL[slot](); }, 1800);
+          e.preventDefault();
+          return;
+        }
+        clickerKeys[slot] = e.code;
+        const badge = document.getElementById(`key-${slot}`);
+        badge.textContent = keyLabel(e.code);
+        badge.classList.add('set');
+        btn.textContent = SLOT_LABEL[slot]();
+        btn.classList.remove('waiting');
+        btn.classList.add('assigned');
+        e.preventDefault();
+        return;
+      }
+
+      // ── Game mode ──
+      if (e.repeat || state.gameOver) return;
+
+      // Dedicated undo / score keys fire immediately on keydown
+      if (clickerKeys.undo && e.code === clickerKeys.undo) {
+        e.preventDefault();
+        undoPoint();
+        return;
+      }
+      if (clickerKeys.score && e.code === clickerKeys.score) {
+        e.preventDefault();
+        readScore();
+        return;
+      }
+
+      const team = teamForKey(e.code);
+      if (!team) return;
+      e.preventDefault();
+      keyHoldStart[e.code] = Date.now();
+      // Only show hold animation when long-press undo is active (no dedicated undo key)
+      if (!clickerKeys.undo) {
+        document.getElementById(`card-${team}`).classList.add('holding');
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      const start = keyHoldStart[e.code];
+      if (start === undefined) return;
+      delete keyHoldStart[e.code];
+      const team = teamForKey(e.code);
+      if (!team) return;
+      document.getElementById(`card-${team}`).classList.remove('holding');
+      if (state.gameOver) return;
+      // Long-press undo only when no dedicated undo key is assigned
+      if (!clickerKeys.undo && Date.now() - start >= HOLD_MS) {
+        undoPoint();
+      } else {
+        addPoint(team);
+      }
+    });
+
     // ── State ────────────────────────────────────────────────────────────────
+    let wakeLock = null;
+
     const state = {
       nameA: 'Rood',
       nameB: 'Blauw',
@@ -396,13 +628,22 @@
 
       document.getElementById('label-a').textContent = state.nameA;
       document.getElementById('label-b').textContent = state.nameB;
-      document.getElementById('cmd-a').textContent = state.nameA.toLowerCase();
-      document.getElementById('cmd-b').textContent = state.nameB.toLowerCase();
+      document.getElementById('cmd-a').textContent = `punt ${state.nameA.toLowerCase()}`;
+      document.getElementById('cmd-b').textContent = `punt ${state.nameB.toLowerCase()}`;
+      // Update clicker button labels with actual team names
+      document.querySelectorAll('.slot-team-a').forEach(el => el.textContent = state.nameA);
+      document.querySelectorAll('.slot-team-b').forEach(el => el.textContent = state.nameB);
+      // Sync hold threshold CSS var
+      document.documentElement.style.setProperty('--hold-duration', `${HOLD_MS}ms`);
 
       document.getElementById('setup').style.display = 'none';
       document.getElementById('game').style.display = 'flex';
 
       requestWakeLock();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && !state.gameOver) requestWakeLock();
+      });
+
       initRecognition();
       speak(`Wedstrijd begonnen. ${state.nameA} tegen ${state.nameB}. Succes!`);
     }
@@ -415,12 +656,14 @@
       else state.scoreB++;
       updateScoreDisplay();
       flashCard(team);
-      if (!checkWin()) readScore();
+      navigator.vibrate?.(50);
+      checkWin();
     }
 
     function undoPoint() {
       if (state.history.length === 0) {
-        speak('Niets om ongedaan te maken.');
+        setLastAction('Niets om ongedaan te maken');
+        navigator.vibrate?.([30, 30, 30, 30, 30]);
         return;
       }
       const prev = state.history.pop();
@@ -428,7 +671,7 @@
       state.scoreB = prev.b;
       updateScoreDisplay();
       setLastAction('Punt ongedaan gemaakt');
-      readScore();
+      navigator.vibrate?.([50, 50, 50]);
     }
 
     function checkWin() {
@@ -488,9 +731,20 @@
 
     // ── Speech Recognition ───────────────────────────────────────────────────
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
+    let recognition  = null;
     let restartHandle = null;
-    let isSpeaking = false;
+    let isSpeaking   = false;
+    let isListening  = false;   // guards safeStart/safeStop against races
+    let lastPointTime = 0;
+    const POINT_COOLDOWN_MS = 1500;
+
+    function escapeRegex(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function wordMatch(text, word) {
+      return new RegExp('\\b' + escapeRegex(word) + '\\b', 'i').test(text);
+    }
 
     function initRecognition() {
       if (!SR) {
@@ -499,23 +753,13 @@
       }
 
       recognition = new SR();
-      recognition.lang = 'nl-NL';
-      recognition.continuous = true;
-      recognition.interimResults = false;
+      recognition.lang            = 'nl-NL';
+      recognition.continuous      = true;   // never stop listening
+      recognition.interimResults  = false;
       recognition.maxAlternatives = 5;
 
-      // Constrain vocabulary to known commands for better accuracy
-      const SGL = window.SpeechGrammarList || window.webkitSpeechGrammarList;
-      if (SGL) {
-        const a = state.nameA.toLowerCase();
-        const b = state.nameB.toLowerCase();
-        const grammar = `#JSGF V1.0; grammar commands; public <command> = ${a} | ${b} | stand | terug ;`;
-        const list = new SGL();
-        list.addFromString(grammar, 1);
-        recognition.grammars = list;
-      }
-
       recognition.onstart = () => {
+        isListening = true;
         if (!isSpeaking) setStatus('listening', 'Luistert...');
       };
 
@@ -523,18 +767,19 @@
         if (isSpeaking) return;
 
         const result = event.results[event.results.length - 1];
-        const alternatives = Array.from({ length: result.length }, (_, i) =>
-          result[i].transcript.toLowerCase().trim()
-        );
 
-        console.log('[spraak]', alternatives);
+        // Walk all alternatives — first command match wins
+        let matched = false;
+        for (let i = 0; i < result.length; i++) {
+          const transcript = result[i].transcript.toLowerCase().trim();
+          console.log(`[alt ${i}] "${transcript}"`);
+          if (tryCommand(transcript)) { matched = true; break; }
+        }
 
-        const match = alternatives[0];
-        setStatus('heard', `"${match}"`);
-        processCommand(match);
-        setTimeout(() => {
-          if (!isSpeaking) setStatus('listening', 'Luistert...');
-        }, 2500);
+        if (!matched) {
+          setStatus('heard', `"${result[0].transcript.toLowerCase().trim()}"`);
+          setTimeout(() => { if (!isSpeaking) setStatus('listening', 'Luistert...'); }, 1200);
+        }
       };
 
       recognition.onerror = (e) => {
@@ -544,16 +789,17 @@
           return;
         }
         if (e.error === 'network') {
-          setStatus('error', 'Netwerkfout — internetverbinding nodig voor spraakherkenning');
+          setStatus('error', 'Netwerkfout — internetverbinding nodig');
           return;
         }
         setStatus('error', `Fout: ${e.error}`);
       };
 
       recognition.onend = () => {
+        isListening = false;
         if (!state.gameOver && !isSpeaking) {
           clearTimeout(restartHandle);
-          restartHandle = setTimeout(() => safeStart(), 400);
+          restartHandle = setTimeout(() => safeStart(), 300);
         }
       };
 
@@ -561,39 +807,49 @@
     }
 
     function safeStart() {
+      if (isListening || isSpeaking || !recognition) return;
       try { recognition.start(); } catch (_) {}
     }
 
     function safeStop() {
+      if (!isListening || !recognition) return;
       try { recognition.stop(); } catch (_) {}
     }
 
-    function processCommand(text) {
+    // Returns true when a command was recognised and acted on.
+    function tryCommand(text) {
       const a = state.nameA.toLowerCase();
       const b = state.nameB.toLowerCase();
 
-      if (text.includes('terug')) {
+      if (wordMatch(text, 'terug')) {
         undoPoint();
-        setLastAction('Punt ongedaan gemaakt');
-        return;
+        return true;
       }
 
-      if (text.includes('stand')) {
+      if (wordMatch(text, 'stand')) {
         setLastAction('Stand voorgelezen');
         readScore();
-        return;
+        return true;
       }
 
-      if (text.includes(a)) {
+      const now = Date.now();
+      if (now - lastPointTime < POINT_COOLDOWN_MS) return false;
+
+      if (wordMatch(text, 'punt') && wordMatch(text, a)) {
+        lastPointTime = now;
         setLastAction(`Punt voor ${state.nameA}`);
         addPoint('a');
-        return;
+        return true;
       }
-      if (text.includes(b)) {
+
+      if (wordMatch(text, 'punt') && wordMatch(text, b)) {
+        lastPointTime = now;
         setLastAction(`Punt voor ${state.nameB}`);
         addPoint('b');
-        return;
+        return true;
       }
+
+      return false;
     }
 
     // ── Text-to-Speech ───────────────────────────────────────────────────────
@@ -602,22 +858,19 @@
       safeStop();
 
       const utt = new SpeechSynthesisUtterance(text);
-      utt.lang = 'nl-NL';
-      utt.rate = 1.1;
+      utt.lang  = 'nl-NL';
+      utt.rate  = 1.1;
       utt.pitch = 1.0;
 
-      utt.onend = () => {
+      // Single handler for both end and error avoids the double-restart race
+      const onDone = () => {
         isSpeaking = false;
         setStatus('listening', 'Luistert...');
         clearTimeout(restartHandle);
         restartHandle = setTimeout(() => safeStart(), 350);
       };
-
-      utt.onerror = () => {
-        isSpeaking = false;
-        clearTimeout(restartHandle);
-        restartHandle = setTimeout(() => safeStart(), 350);
-      };
+      utt.onend  = onDone;
+      utt.onerror = onDone;
 
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utt);
@@ -625,11 +878,16 @@
 
     // ── Screen Wake Lock ─────────────────────────────────────────────────────
     async function requestWakeLock() {
+      if (wakeLock && !wakeLock.released) return;
       try {
-        await navigator.wakeLock.request('screen');
-      } catch (_) {
-        // Not supported or denied — not critical
-      }
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => {
+          wakeLock = null;
+          if (!state.gameOver && document.visibilityState === 'visible') {
+            requestWakeLock();
+          }
+        });
+      } catch (_) {}
     }
   </script>
 </body>
