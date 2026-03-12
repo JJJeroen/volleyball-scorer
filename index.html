@@ -445,12 +445,12 @@
   <!-- Game -->
   <div id="game">
     <div class="scoreboard">
-      <div class="team-card" id="card-a" onclick="addPoint('a')">
+      <div class="team-card" id="card-a">
         <div class="team-label" id="label-a">Rood</div>
         <div class="score-num"  id="score-a">0</div>
         <div class="tap-hint">tik</div>
       </div>
-      <div class="team-card" id="card-b" onclick="addPoint('b')">
+      <div class="team-card" id="card-b">
         <div class="team-label" id="label-b">Blauw</div>
         <div class="score-num"  id="score-b">0</div>
         <div class="tap-hint">tik</div>
@@ -704,6 +704,26 @@
       if (assigningFor) { handleAssign(code); return; }
       if (!state.gameOver) handleInstantCode(code);
     }, { passive: false });
+
+    // ── Team card tap (finger tap only, not clicker swipe) ───────────────────
+    // We removed onclick to avoid synthetic-click double-scores from the clicker.
+    // Instead listen for touchend with a small delta (genuine tap).
+    ['a', 'b'].forEach(team => {
+      const card = document.getElementById(`card-${team}`);
+      let cardTouchStart = null;
+      card.addEventListener('touchstart', (e) => {
+        cardTouchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }, { passive: true });
+      card.addEventListener('touchend', (e) => {
+        if (!cardTouchStart) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - cardTouchStart.x;
+        const dy = t.clientY - cardTouchStart.y;
+        cardTouchStart = null;
+        // Only count as a tap if the finger barely moved (not a clicker swipe landing here)
+        if (Math.abs(dx) < 20 && Math.abs(dy) < 20) addPoint(team);
+      }, { passive: true });
+    });
 
     // ── State ────────────────────────────────────────────────────────────────
     let wakeLock = null;
