@@ -392,6 +392,11 @@
 </head>
 <body>
 
+  <!-- Hidden input to capture Bluetooth HID keyboard events on Android -->
+  <input id="key-trap" type="text" readonly
+         style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;"
+         tabindex="0" autocomplete="off" />
+
   <!-- Protocol warning -->
   <div id="protocol-warning">
     <h2>Microfoon niet beschikbaar</h2>
@@ -429,7 +434,7 @@
         <span class="key-badge" id="key-score">–</span>
       </div>
       <p style="font-size:0.72rem; color:#444; margin-top:10px; line-height:1.5;" id="clicker-hint">
-        Druk op een knop om te koppelen &nbsp;·&nbsp; Zonder ongedaan-knop: lang vasthouden = ongedaan
+        Druk op een knop om te koppelen &nbsp;·&nbsp; Zonder ongedaan-knop: lang vasthouden = ongedaan &nbsp;·&nbsp; Volume-knoppen worden door Android onderschept en werken niet
       </p>
     </div>
 
@@ -492,6 +497,32 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
+
+    // ── Key trap — keeps a focusable element active so Bluetooth HID
+    //    events reach the document on Android Chrome ─────────────────────────
+    const keyTrap = document.getElementById('key-trap');
+
+    function focusKeyTrap() {
+      // Only steal focus if no real text input is active
+      const active = document.activeElement;
+      if (!active || active === document.body || active === keyTrap) {
+        keyTrap.focus({ preventScroll: true });
+      }
+    }
+
+    // Focus on load (requires a prior user gesture on some browsers — handled
+    // by the click listener below, which covers the very first interaction)
+    document.addEventListener('click', () => setTimeout(focusKeyTrap, 50), true);
+    document.addEventListener('touchend', () => setTimeout(focusKeyTrap, 50), true);
+    // Re-focus if somehow lost
+    keyTrap.addEventListener('blur', () => setTimeout(focusKeyTrap, 100));
+
+    // Prevent arrow keys from scrolling the page
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+      }
+    }, { capture: true });
 
     // ── Protocol check ───────────────────────────────────────────────────────
     if (location.protocol === 'file:') {
