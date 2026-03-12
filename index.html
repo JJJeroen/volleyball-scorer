@@ -436,6 +436,7 @@
       <p style="font-size:0.72rem; color:#444; margin-top:10px; line-height:1.5;" id="clicker-hint">
         Druk op een knop om te koppelen &nbsp;·&nbsp; Zonder ongedaan-knop: lang vasthouden = ongedaan &nbsp;·&nbsp; Volume-knoppen worden door Android onderschept en werken niet
       </p>
+      <div id="debug-event" style="font-size:0.7rem; font-family:monospace; color:#5c4fff; margin-top:8px; min-height:16px; text-align:center;"></div>
     </div>
 
     <button class="btn-start" onclick="startGame()">Start wedstrijd</button>
@@ -638,6 +639,23 @@
       if (!clickerKeys.undo && Date.now() - start >= HOLD_MS) undoPoint();
       else addPoint(team);
     });
+
+    // ── Debug: show raw events so we can identify what the clicker sends ───────
+    function dbg(msg) {
+      const el = document.getElementById('debug-event');
+      if (el) el.textContent = msg;
+    }
+    ['keydown','keyup','mousedown','mouseup','click','pointerdown','pointerup',
+     'touchstart','touchend'].forEach(type => {
+      document.addEventListener(type, (e) => {
+        const detail = e.code || e.key || (e.button !== undefined ? `btn${e.button}` : '') ||
+                       (e.touches ? `${e.touches.length}touch` : '');
+        dbg(`${type}: ${detail}`);
+      }, { capture: true, passive: true });
+    });
+    document.addEventListener('wheel', (e) => {
+      dbg(`wheel: dx=${Math.round(e.deltaX)} dy=${Math.round(e.deltaY)}`);
+    }, { capture: true, passive: true });
 
     // Wheel events — many cheap Bluetooth clickers send scroll instead of keydown
     document.addEventListener('wheel', (e) => {
