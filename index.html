@@ -787,8 +787,8 @@
       state.scoreA = prev.a;
       state.scoreB = prev.b;
       updateScoreDisplay();
-      setLastAction('Punt ongedaan gemaakt');
       navigator.vibrate?.([50, 50, 50]);
+      speak(`ongedaan gemaakt, stand ${state.scoreA} ${state.scoreB}`);
     }
 
     function checkWin() {
