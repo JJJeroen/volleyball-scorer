@@ -652,11 +652,18 @@
       if (el) el.innerHTML = msg;
     }
 
+    let swipeWasHandled = false; // suppress the synthetic click that follows a swipe
+
     document.addEventListener('touchstart', (e) => {
       const t = e.changedTouches[0];
       touchStart = { x: t.clientX, y: t.clientY };
       dbg(`start: ${Math.round(t.clientX)},${Math.round(t.clientY)}`);
     }, { capture: true, passive: true });
+
+    // Block scroll during an active swipe gesture
+    document.addEventListener('touchmove', (e) => {
+      if (touchStart) e.preventDefault();
+    }, { capture: true, passive: false });
 
     document.addEventListener('touchend', (e) => {
       if (!touchStart) { dbg('end: no start'); return; }
@@ -666,7 +673,7 @@
       touchStart = null;
 
       const ax = Math.abs(dx), ay = Math.abs(dy);
-      dbg(`dx:${Math.round(dx)} dy:${Math.round(dy)}<br>assigning:${assigningFor}`);
+      dbg(`dx:${Math.round(dx)} dy:${Math.round(dy)} assigning:${assigningFor}`);
 
       if (ax < SWIPE_MIN && ay < SWIPE_MIN) return; // tap, not swipe — ignore
 
@@ -676,9 +683,15 @@
 
       dbg(`code:${code} assigning:${assigningFor}`);
       e.preventDefault();
+      swipeWasHandled = true; // eat the upcoming synthetic click
       if (assigningFor) { handleAssign(code); return; }
       if (!state.gameOver) handleInstantCode(code);
     }, { capture: true, passive: false });
+
+    // Eat the synthetic click that Chrome fires after a touch gesture
+    document.addEventListener('click', (e) => {
+      if (swipeWasHandled) { swipeWasHandled = false; e.stopPropagation(); e.preventDefault(); }
+    }, { capture: true });
 
     // Wheel events — many cheap Bluetooth clickers send scroll instead of keydown
     document.addEventListener('wheel', (e) => {
