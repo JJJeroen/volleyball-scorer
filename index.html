@@ -532,9 +532,12 @@
 
     // ── Clicker config ───────────────────────────────────────────────────────
     const HOLD_MS = 500;
-    const clickerKeys  = { a: null, b: null, undo: null, score: null };
-    const keyHoldStart = {};
-    let assigningFor   = null;
+    const clickerKeys    = { a: null, b: null, undo: null, score: null };
+    const keyHoldStart   = {};
+    let assigningFor     = null;
+    let lastWheelTime    = 0;
+    const WHEEL_DEBOUNCE   = 350; // ms: ignore repeated wheel ticks from one gesture
+    const WHEEL_THRESHOLD  = 20;  // min deltaX/Y to count as intentional
 
     const SLOT_LABEL = {
       a:     () => `Punt ${document.querySelector('.slot-team-a')?.textContent || 'Rood'}`,
@@ -563,6 +566,8 @@
     }
 
     function keyLabel(code) {
+      const wheelLabels = { WheelUp: '↑', WheelDown: '↓', WheelLeft: '←', WheelRight: '→' };
+      if (wheelLabels[code]) return wheelLabels[code];
       return code
         .replace('AudioVolume', 'Vol')
         .replace('Arrow', '')
@@ -573,55 +578,53 @@
         .replace('Escape', 'Esc');
     }
 
-    document.addEventListener('keydown', (e) => {
-      // ── Assignment mode ──
-      if (assigningFor) {
-        const slot = assigningFor;
-        assigningFor = null;
-        // Reject duplicate
-        const duplicate = Object.entries(clickerKeys).find(([k, v]) => k !== slot && v === e.code);
-        const btn = document.getElementById(`assign-${slot}`);
-        if (duplicate) {
-          btn.textContent = 'Al in gebruik! Probeer andere knop';
-          btn.classList.remove('waiting');
-          setTimeout(() => { btn.textContent = SLOT_LABEL[slot](); }, 1800);
-          e.preventDefault();
-          return;
-        }
-        clickerKeys[slot] = e.code;
-        const badge = document.getElementById(`key-${slot}`);
-        badge.textContent = keyLabel(e.code);
-        badge.classList.add('set');
-        btn.textContent = SLOT_LABEL[slot]();
+    // Convert a WheelEvent into a synthetic direction code
+    function wheelCode(e) {
+      const ax = Math.abs(e.deltaX), ay = Math.abs(e.deltaY);
+      if (ax < WHEEL_THRESHOLD && ay < WHEEL_THRESHOLD) return null;
+      if (ay >= ax) return e.deltaY < 0 ? 'WheelUp' : 'WheelDown';
+      return e.deltaX < 0 ? 'WheelLeft' : 'WheelRight';
+    }
+
+    // Shared assignment handler (works for both keyboard codes and wheel codes)
+    function handleAssign(code) {
+      const slot = assigningFor;
+      assigningFor = null;
+      const duplicate = Object.entries(clickerKeys).find(([k, v]) => k !== slot && v === code);
+      const btn = document.getElementById(`assign-${slot}`);
+      if (duplicate) {
+        btn.textContent = 'Al in gebruik! Probeer andere knop';
         btn.classList.remove('waiting');
-        btn.classList.add('assigned');
-        e.preventDefault();
+        setTimeout(() => { btn.textContent = SLOT_LABEL[slot](); }, 1800);
         return;
       }
+      clickerKeys[slot] = code;
+      const badge = document.getElementById(`key-${slot}`);
+      badge.textContent = keyLabel(code);
+      badge.classList.add('set');
+      btn.textContent = SLOT_LABEL[slot]();
+      btn.classList.remove('waiting');
+      btn.classList.add('assigned');
+    }
 
-      // ── Game mode ──
+    // Instant action — wheel events have no "up", so no long-press support
+    function handleInstantCode(code) {
+      if (clickerKeys.undo  && code === clickerKeys.undo)  { undoPoint();  return; }
+      if (clickerKeys.score && code === clickerKeys.score)  { readScore();  return; }
+      const team = teamForKey(code);
+      if (team) addPoint(team);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (assigningFor) { handleAssign(e.code); e.preventDefault(); return; }
       if (e.repeat || state.gameOver) return;
-
-      // Dedicated undo / score keys fire immediately on keydown
-      if (clickerKeys.undo && e.code === clickerKeys.undo) {
-        e.preventDefault();
-        undoPoint();
-        return;
-      }
-      if (clickerKeys.score && e.code === clickerKeys.score) {
-        e.preventDefault();
-        readScore();
-        return;
-      }
-
+      if (clickerKeys.undo  && e.code === clickerKeys.undo)  { e.preventDefault(); undoPoint(); return; }
+      if (clickerKeys.score && e.code === clickerKeys.score)  { e.preventDefault(); readScore(); return; }
       const team = teamForKey(e.code);
       if (!team) return;
       e.preventDefault();
       keyHoldStart[e.code] = Date.now();
-      // Only show hold animation when long-press undo is active (no dedicated undo key)
-      if (!clickerKeys.undo) {
-        document.getElementById(`card-${team}`).classList.add('holding');
-      }
+      if (!clickerKeys.undo) document.getElementById(`card-${team}`).classList.add('holding');
     });
 
     document.addEventListener('keyup', (e) => {
@@ -632,13 +635,21 @@
       if (!team) return;
       document.getElementById(`card-${team}`).classList.remove('holding');
       if (state.gameOver) return;
-      // Long-press undo only when no dedicated undo key is assigned
-      if (!clickerKeys.undo && Date.now() - start >= HOLD_MS) {
-        undoPoint();
-      } else {
-        addPoint(team);
-      }
+      if (!clickerKeys.undo && Date.now() - start >= HOLD_MS) undoPoint();
+      else addPoint(team);
     });
+
+    // Wheel events — many cheap Bluetooth clickers send scroll instead of keydown
+    document.addEventListener('wheel', (e) => {
+      const code = wheelCode(e);
+      if (!code) return;
+      e.preventDefault();
+      const now = Date.now();
+      if (now - lastWheelTime < WHEEL_DEBOUNCE) return;
+      lastWheelTime = now;
+      if (assigningFor) { handleAssign(code); return; }
+      if (!state.gameOver) handleInstantCode(code);
+    }, { passive: false });
 
     // ── State ────────────────────────────────────────────────────────────────
     let wakeLock = null;
