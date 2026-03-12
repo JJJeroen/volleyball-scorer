@@ -436,7 +436,6 @@
       <p style="font-size:0.72rem; color:#444; margin-top:10px; line-height:1.5;" id="clicker-hint">
         Druk op een knop om te koppelen &nbsp;·&nbsp; Zonder ongedaan-knop: lang vasthouden = ongedaan &nbsp;·&nbsp; Volume-knoppen worden door Android onderschept en werken niet
       </p>
-      <div id="debug-event" style="font-size:0.7rem; font-family:monospace; color:#5c4fff; margin-top:8px; min-height:16px; text-align:center;"></div>
     </div>
 
     <button class="btn-start" onclick="startGame()">Start wedstrijd</button>
@@ -567,7 +566,10 @@
     }
 
     function keyLabel(code) {
-      const wheelLabels = { WheelUp: '↑', WheelDown: '↓', WheelLeft: '←', WheelRight: '→' };
+      const wheelLabels = {
+        WheelUp: '↑', WheelDown: '↓', WheelLeft: '←', WheelRight: '→',
+        SwipeUp: '↑', SwipeDown: '↓', SwipeLeft: '←', SwipeRight: '→',
+      };
       if (wheelLabels[code]) return wheelLabels[code];
       return code
         .replace('AudioVolume', 'Vol')
@@ -640,24 +642,33 @@
       else addPoint(team);
     });
 
-    // ── Debug: show raw touch coordinates to identify clicker buttons ──────────
-    function dbg(msg) {
-      const el = document.getElementById('debug-event');
-      if (el) el.textContent = msg;
-    }
-    let touchStartPos = null;
+    // ── Touch swipe detection (Bluetooth clicker sends fake touch gestures) ────
+    const SWIPE_MIN = 50; // px — minimum delta to count as a swipe
+    let touchStart = null;
+
     document.addEventListener('touchstart', (e) => {
       const t = e.changedTouches[0];
-      touchStartPos = { x: Math.round(t.clientX), y: Math.round(t.clientY) };
-      dbg(`start: ${touchStartPos.x},${touchStartPos.y}`);
+      touchStart = { x: t.clientX, y: t.clientY };
     }, { capture: true, passive: true });
+
     document.addEventListener('touchend', (e) => {
+      if (!touchStart) return;
       const t = e.changedTouches[0];
-      const ex = Math.round(t.clientX), ey = Math.round(t.clientY);
-      const dx = touchStartPos ? ex - touchStartPos.x : 0;
-      const dy = touchStartPos ? ey - touchStartPos.y : 0;
-      dbg(`end: ${ex},${ey}  delta: ${dx},${dy}`);
-    }, { capture: true, passive: true });
+      const dx = t.clientX - touchStart.x;
+      const dy = t.clientY - touchStart.y;
+      touchStart = null;
+
+      const ax = Math.abs(dx), ay = Math.abs(dy);
+      if (ax < SWIPE_MIN && ay < SWIPE_MIN) return; // tap, not swipe — ignore
+
+      let code;
+      if (ay >= ax) code = dy > 0 ? 'SwipeDown' : 'SwipeUp';
+      else          code = dx > 0 ? 'SwipeRight' : 'SwipeLeft';
+
+      e.preventDefault();
+      if (assigningFor) { handleAssign(code); return; }
+      if (!state.gameOver) handleInstantCode(code);
+    }, { capture: true, passive: false });
 
     // Wheel events — many cheap Bluetooth clickers send scroll instead of keydown
     document.addEventListener('wheel', (e) => {
