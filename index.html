@@ -772,6 +772,8 @@
       updateScoreDisplay();
       flashCard(team);
       navigator.vibrate?.(50);
+      const name = team === 'a' ? state.nameA : state.nameB;
+      speak(`punt ${name}, stand ${state.scoreA} ${state.scoreB}`);
       checkWin();
     }
 
