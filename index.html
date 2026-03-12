@@ -436,7 +436,6 @@
       <p style="font-size:0.72rem; color:#444; margin-top:10px; line-height:1.5;" id="clicker-hint">
         Druk op een knop om te koppelen &nbsp;·&nbsp; Zonder ongedaan-knop: lang vasthouden = ongedaan &nbsp;·&nbsp; Volume-knoppen worden door Android onderschept en werken niet
       </p>
-      <div id="debug-event" style="font-size:0.7rem; font-family:monospace; color:#5c4fff; margin-top:8px; min-height:32px; text-align:center; line-height:1.6;"></div>
     </div>
 
     <button class="btn-start" onclick="startGame()">Start wedstrijd</button>
@@ -457,7 +456,7 @@
       </div>
     </div>
 
-    <div class="status-bar listening" id="status-bar">
+    <div class="status-bar" id="status-bar" style="display:none">
       <div class="dot"></div>
       <span class="status-text" id="status-text">Luistert...</span>
     </div>
@@ -760,8 +759,8 @@
         if (document.visibilityState === 'visible' && !state.gameOver) requestWakeLock();
       });
 
-      initRecognition();
-      speak(`Wedstrijd begonnen. ${state.nameA} tegen ${state.nameB}. Succes!`);
+      // initRecognition();  // disabled for clicker-only testing
+      // speak(`Wedstrijd begonnen. ${state.nameA} tegen ${state.nameB}. Succes!`);
     }
 
     // ── Scoring ──────────────────────────────────────────────────────────────
