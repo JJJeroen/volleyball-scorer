@@ -436,6 +436,7 @@
       <p style="font-size:0.72rem; color:#444; margin-top:10px; line-height:1.5;" id="clicker-hint">
         Druk op een knop om te koppelen &nbsp;·&nbsp; Zonder ongedaan-knop: lang vasthouden = ongedaan &nbsp;·&nbsp; Volume-knoppen worden door Android onderschept en werken niet
       </p>
+      <div id="debug-event" style="font-size:0.7rem; font-family:monospace; color:#5c4fff; margin-top:8px; min-height:32px; text-align:center; line-height:1.6;"></div>
     </div>
 
     <button class="btn-start" onclick="startGame()">Start wedstrijd</button>
@@ -646,25 +647,34 @@
     const SWIPE_MIN = 50; // px — minimum delta to count as a swipe
     let touchStart = null;
 
+    function dbg(msg) {
+      const el = document.getElementById('debug-event');
+      if (el) el.innerHTML = msg;
+    }
+
     document.addEventListener('touchstart', (e) => {
       const t = e.changedTouches[0];
       touchStart = { x: t.clientX, y: t.clientY };
+      dbg(`start: ${Math.round(t.clientX)},${Math.round(t.clientY)}`);
     }, { capture: true, passive: true });
 
     document.addEventListener('touchend', (e) => {
-      if (!touchStart) return;
+      if (!touchStart) { dbg('end: no start'); return; }
       const t = e.changedTouches[0];
       const dx = t.clientX - touchStart.x;
       const dy = t.clientY - touchStart.y;
       touchStart = null;
 
       const ax = Math.abs(dx), ay = Math.abs(dy);
+      dbg(`dx:${Math.round(dx)} dy:${Math.round(dy)}<br>assigning:${assigningFor}`);
+
       if (ax < SWIPE_MIN && ay < SWIPE_MIN) return; // tap, not swipe — ignore
 
       let code;
       if (ay >= ax) code = dy > 0 ? 'SwipeDown' : 'SwipeUp';
       else          code = dx > 0 ? 'SwipeRight' : 'SwipeLeft';
 
+      dbg(`code:${code} assigning:${assigningFor}`);
       e.preventDefault();
       if (assigningFor) { handleAssign(code); return; }
       if (!state.gameOver) handleInstantCode(code);
